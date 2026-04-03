@@ -11,6 +11,8 @@ from app.models.orm.outreach import OutreachModel
 from app.models.orm.portfolio import PortfolioItemModel
 from app.models.orm.calendar import CalendarEventModel
 
+print("Cleaning database...")
+Base.metadata.drop_all(bind=engine)
 print("Creating all tables...")
 Base.metadata.create_all(bind=engine)
 

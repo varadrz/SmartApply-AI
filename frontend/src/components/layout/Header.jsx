@@ -1,8 +1,11 @@
 "use client";
 
 import React from 'react';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function Header() {
+  const { user } = useAppStore();
+
   return (
     <header className="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 z-40 bg-[#131313]/70 backdrop-blur-xl flex justify-between items-center px-8 shadow-2xl shadow-black/50 border-b border-outline-variant/10">
       <div className="flex items-center gap-4 flex-1">
@@ -26,16 +29,18 @@ export default function Header() {
         </button>
         <div className="h-6 w-px bg-outline-variant/20"></div>
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
-            <img 
-              alt="User Avatar" 
-              className="w-full h-full object-cover" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRX_H3B5g7kUeyfUrLg25cKhpNrw4MH3sfUU5X6J6fr5KL0vFjd3agEFnlOAYKqPGWf5YSzHHSH0jhtT-_4C7AGVc8-fsFrnNrekgqhxC9kGtvVFO3esXfwVfC5FL0V4236MTYdaxxoMVulRUhwDo8QzRT2YNfTy_0T6uYrgpP7eHhkkElolmS-1LRPyaEio2iRHKu-NQk5rHUkwSNccE5p5jnyUwAPa1sybSfrj9BHuZUR6tHwVkiRbo68wrnB9_tVmHV5IpZpY0"
-            />
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30 bg-tertiary/20 flex items-center justify-center">
+            {user?.full_name ? (
+              <span className="text-xs font-bold text-tertiary">{user.full_name.charAt(0)}</span>
+            ) : (
+              <span className="material-symbols-outlined text-sm text-tertiary">person</span>
+            )}
           </div>
           <div className="flex flex-col hidden sm:flex">
-            <span className="text-xs font-bold text-white leading-none">Marcus Thorne</span>
-            <span className="text-[10px] text-secondary mt-1 tracking-widest uppercase">ID_8829-00</span>
+            <span className="text-xs font-bold text-white leading-none">{user?.full_name || 'Anonymous User'}</span>
+            <span className="text-[10px] text-secondary mt-1 tracking-widest uppercase">
+              {user?.id ? `ID_${user.id.slice(-4)}` : 'GUEST_00'}
+            </span>
           </div>
         </div>
       </div>

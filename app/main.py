@@ -99,6 +99,7 @@ from app.api.routers.interviews import router as interviews_router
 from app.api.routers.portfolio import router as portfolio_router
 from app.api.routers.resume import router as resume_router
 from app.api.routers.market import router as market_router
+from app.api.routers.onboarding import router as onboarding_router
 
 app.include_router(company_router, prefix="/api/v1")
 app.include_router(opportunities_router, prefix="/api/v1")
@@ -109,6 +110,7 @@ app.include_router(interviews_router, prefix="/api/v1")
 app.include_router(portfolio_router, prefix="/api/v1")
 app.include_router(resume_router, prefix="/api/v1")
 app.include_router(market_router, prefix="/api/v1")
+app.include_router(onboarding_router, prefix="/api/v1")
 
 @app.get("/health/db", tags=["health"])
 def health_check_db(db: Session = Depends(get_db)):

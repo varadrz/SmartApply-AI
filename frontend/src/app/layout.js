@@ -2,6 +2,7 @@ import { Inter, Manrope } from 'next/font/google';
 import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
+import NavigationGuard from '@/components/layout/NavigationGuard';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' });
@@ -29,15 +30,17 @@ export default function RootLayout({ children }) {
             fontWeight: 'bold',
           }
         }} />
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="flex-1 ml-64 bg-surface min-h-screen relative flex flex-col">
-            <Header />
-            <div className="pt-16 min-h-screen w-full flex flex-col">
-              {children}
-            </div>
-          </main>
-        </div>
+        <NavigationGuard>
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <main className="flex-1 ml-64 bg-surface min-h-screen relative flex flex-col">
+              <Header />
+              <div className="pt-16 min-h-screen w-full flex flex-col">
+                {children}
+              </div>
+            </main>
+          </div>
+        </NavigationGuard>
       </body>
     </html>
   );

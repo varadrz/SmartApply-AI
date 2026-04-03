@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 from app.models.tracker import Opportunity, OpportunityType, Priority, TrackerUserProfile
 
 MNC_KEYWORDS = [
@@ -86,9 +87,34 @@ def _infer_type(opp: Opportunity) -> OpportunityType:
         return OpportunityType.startup_role
     return opp.type
 
+def _check_eligibility(opp: Opportunity, profile: TrackerUserProfile) -> bool:
+    """Phase 6: Eligibility Filter Logic."""
+    if not profile.graduation_year:
+        return True
+    
+    # Simple regex to find years in descriptions (e.g. 2025, 2026)
+    text = f"{opp.title} {opp.description}".lower()
+    years_found = re.findall(r"202\d", text)
+    
+    if years_found:
+        # If the job explicitly mentions a year, the user must match it
+        target_years = [int(y) for y in years_found]
+        if profile.graduation_year not in target_years:
+            # Check for range logic like "2025 or 2026 grads"
+            return False
+            
+    # Check for "final year" keywords if user is not in final year
+    if "final year" in text and profile.current_year and int(profile.current_year) < 4:
+        return False
+        
+    return True
+
 def classify_and_score(opp: Opportunity, profile: TrackerUserProfile) -> Opportunity:
     if opp.type == OpportunityType.unknown:
         opp.type = _infer_type(opp)
+
+    # Phase 6: Eligibility check
+    is_eligible = _check_eligibility(opp, profile)
 
     skill_pts, matched = _skill_match(opp, profile)
     brand_pts, company_type = _brand_score(opp)
@@ -96,7 +122,18 @@ def classify_and_score(opp: Opportunity, profile: TrackerUserProfile) -> Opportu
     hiring_pts   = _hiring_bonus(opp)
     type_pts     = TYPE_BONUS.get(opp.type, 0)
 
-    total = min(skill_pts + brand_pts + urgency_pts + hiring_pts + type_pts, 100)
+    # Phase 7: Matching Engine (Weighted)
+    # Readiness score from DSA Analysis if available (placeholder integration)
+    dsa_pts = 0
+    if hasattr(profile, 'dsa_readiness'):
+        dsa_pts = int((profile.dsa_readiness / 100) * 15)
+
+    base_score = skill_pts + brand_pts + urgency_pts + hiring_pts + type_pts + dsa_pts
+    
+    if not is_eligible:
+        total = int(base_score * 0.3) # Heavy penalty for ineligibility
+    else:
+        total = min(base_score, 100)
 
     opp.skill_match_score = int((skill_pts / 35) * 100) if skill_pts else 0
     opp.matched_skills    = matched

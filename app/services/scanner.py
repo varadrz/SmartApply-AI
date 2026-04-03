@@ -7,6 +7,8 @@ from app.services.scrapers.devfolio import scrape_devfolio
 from app.services.scrapers.unstop import scrape_unstop
 from app.services.scrapers.mlh import scrape_mlh
 from app.services.scrapers.startups import scrape_yc_startups, scrape_community_hiring
+from app.services.scrapers.linkedin_jobs import scrape_linkedin_jobs
+from app.services.scrapers.naukri import scrape_naukri_jobs
 from app.services.classifier import classify_and_score
 from app.services.database import upsert_opportunity
 import aiosqlite
@@ -30,6 +32,8 @@ SCRAPER_MAP = {
     "mlh":       lambda profile: scrape_mlh(),
     "yc":        lambda profile: scrape_yc_startups(profile.roles),
     "community": lambda profile: scrape_community_hiring(),
+    "linkedin":  lambda profile: scrape_linkedin_jobs(query=",".join(profile.roles or ["internship"])),
+    "naukri":    lambda profile: scrape_naukri_jobs(query=",".join(profile.roles or ["internship"])),
 }
 
 async def update_calendar_event_id(opp_id: int, event_id: str):

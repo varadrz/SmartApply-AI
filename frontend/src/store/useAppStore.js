@@ -180,5 +180,21 @@ export const useAppStore = create((set, get) => ({
       set({ marketLoading: false });
       toast.error("Failed to fetch market intelligence");
     }
+  },
+
+  // --- User Profile & Onboarding ---
+  user: null,
+  userLoading: false,
+  fetchUser: async () => {
+    set({ userLoading: true });
+    try {
+      const response = await axios.get(`${API_BASE}/user/profile`);
+      set({ user: response.data, userLoading: false });
+      return response.data;
+    } catch (err) {
+      set({ user: null, userLoading: false });
+      console.error("Failed to fetch user profile", err);
+      return null;
+    }
   }
 }));
