@@ -1,161 +1,239 @@
-"use client";
-import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Search, 
-  ExternalLink, 
-  Mail, 
-  Copy, 
-  MoreHorizontal,
-  Loader2,
-  AlertCircle,
-  LayoutDashboard
-} from 'lucide-react';
-import { useOutreachStore } from '@/store/useOutreachStore';
-import Link from 'next/link';
-
-const StatusBadge = ({ status }) => {
-  const styles = {
-    draft: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400',
-    sent: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-    replied: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-  };
-  return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${styles[status] || styles.draft}`}>
-      {status}
-    </span>
-  );
-};
-
-const MatchScore = ({ score }) => {
-  const color = score >= 80 ? 'text-emerald-500' : score >= 50 ? 'text-amber-500' : 'text-rose-500';
-  return <span className={`font-bold ${color}`}>{score}%</span>;
-};
-
 export default function Dashboard() {
-  const [url, setUrl] = useState('');
-  const { companies, loading, error, fetchCompanies, analyzeCompany } = useOutreachStore();
-
-  useEffect(() => {
-    fetchCompanies();
-  }, [fetchCompanies]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!url) return;
-    try {
-      await analyzeCompany(url);
-      setUrl('');
-    } catch (err) {
-      // Error is handled in store
-    }
-  };
-
   return (
-    <div className="space-y-8 max-w-6xl mx-auto py-8">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight">Outreach Control</h2>
-        <p className="text-muted-foreground text-lg">Analyze companies and generate personalized emails in seconds.</p>
-      </div>
-
-      {/* Analysis UI */}
-      <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
-        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-3 p-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
-            <input 
-              type="url" 
-              placeholder="Enter company website URL (e.g., https://openai.com)" 
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="w-full bg-background border rounded-lg pl-10 pr-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              required
-            />
+    <div className="flex-1 overflow-y-auto no-scrollbar pt-8">
+      <div className="p-8">
+        {/* Bento Grid Hero Section */}
+        <div className="grid grid-cols-12 gap-6 mb-8">
+          {/* Outreach Funnel */}
+          <div className="col-span-12 lg:col-span-8 bg-surface-container-low p-8 rounded-xl border border-outline-variant/10 relative overflow-hidden group">
+            <div className="relative z-10">
+              <h2 className="font-headline text-3xl font-extrabold tracking-tighter mb-8 text-white">Outreach Intelligence</h2>
+              <div className="flex items-end gap-12">
+                <div>
+                  <p className="font-label text-[10px] uppercase tracking-widest text-outline mb-2">Total Sent</p>
+                  <p className="text-5xl font-headline font-black text-white">412</p>
+                </div>
+                <div className="flex-1 max-w-xs h-16 flex items-end gap-1 mb-1">
+                  <div className="w-2 bg-outline-variant/20 h-1/3"></div>
+                  <div className="w-2 bg-outline-variant/20 h-2/3"></div>
+                  <div className="w-2 bg-outline-variant/20 h-1/2"></div>
+                  <div className="w-2 bg-tertiary h-full"></div>
+                  <div className="w-2 bg-tertiary h-4/5"></div>
+                  <div className="w-2 bg-tertiary h-5/6"></div>
+                  <div className="w-2 bg-outline-variant/20 h-2/3"></div>
+                  <div className="w-2 bg-outline-variant/20 h-1/3"></div>
+                </div>
+                <div>
+                  <p className="font-label text-[10px] uppercase tracking-widest text-tertiary mb-2">Replied</p>
+                  <p className="text-5xl font-headline font-black text-white">89</p>
+                  <p className="text-[10px] text-tertiary mt-1 font-bold">+14% conversion rate</p>
+                </div>
+              </div>
+            </div>
+            {/* Aesthetic background pattern */}
+            <div className="absolute -right-20 -bottom-20 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-700">
+              <span className="material-symbols-outlined text-[300px]" style={{fontVariationSettings: "'FILL' 1"}}>insights</span>
+            </div>
           </div>
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-bold text-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loading ? <Loader2 className="animate-spin" size={20} /> : <Plus size={20} />}
-            <span>Analyze</span>
-          </button>
-        </form>
-      </div>
 
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-lg flex items-center gap-3">
-          <AlertCircle size={20} />
-          <p className="font-medium">{error}</p>
+          {/* Avg. Selection Probability */}
+          <div className="col-span-12 lg:col-span-4 bg-surface-container p-8 rounded-xl flex flex-col justify-between border border-outline-variant/10">
+            <div className="flex justify-between items-start">
+              <p className="font-label text-[10px] uppercase tracking-widest text-outline">Skill Selection Match</p>
+              <span className="material-symbols-outlined text-tertiary">bolt</span>
+            </div>
+            <div className="my-6">
+              <p className="text-7xl font-headline font-black text-white">78<span className="text-3xl text-tertiary">%</span></p>
+              <div className="mt-4 h-1 w-full bg-outline-variant/20 rounded-full overflow-hidden">
+                <div className="h-full bg-tertiary w-[78%]"></div>
+              </div>
+            </div>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+                Match probability is <span className="text-white font-bold">trending up</span> based on your recent skill set update in the AI Core.
+            </p>
+          </div>
         </div>
-      )}
 
-      {/* Companies Table */}
-      <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-muted/50 border-b">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Company Name</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Match Score</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Select Prob</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">Status</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-muted-foreground text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {companies.map((company) => (
-                <tr key={company.id} className="hover:bg-muted/30 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-lg group-hover:text-primary transition-colors">
-                      {company.company_name || 'Analyzing...'}
-                    </div>
-                    <div className="text-xs text-muted-foreground font-medium truncate max-w-[200px]">
-                      {company.company_url}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <MatchScore score={company.match_score} />
-                  </td>
-                  <td className="px-6 py-4 font-medium">
-                    {company.selection_probability || 'N/A'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <StatusBadge status={company.status} />
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                       <Link 
-                        href={`/company/${company.id}`}
-                        className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-all"
-                        title="View Analysis"
-                      >
-                        <ExternalLink size={18} />
-                      </Link>
-                      <button className="p-2 rounded-lg hover:bg-emerald-500/10 text-muted-foreground hover:emerald-500 transition-all font-bold">
-                        <Mail size={18} />
-                      </button>
-                      <button className="p-2 rounded-lg hover:bg-accent text-muted-foreground hover:text-accent-foreground transition-all">
-                        <Copy size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {companies.length === 0 && !loading && (
-                <tr>
-                  <td colSpan="5" className="px-6 py-20 text-center text-muted-foreground">
-                    <div className="flex flex-col items-center gap-3">
-                      <LayoutDashboard size={48} className="opacity-20" />
-                      <p className="text-lg font-medium">No companies analyzed yet. Start by entering a URL above.</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* Dashboard Split Layout */}
+        <div className="grid grid-cols-12 gap-8 mb-16">
+          {/* Outreach Timeline (Left Column) */}
+          <div className="col-span-12 xl:col-span-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-headline text-xl font-bold tracking-tight text-white">Outreach Timeline</h3>
+              <button className="text-xs font-label uppercase tracking-widest text-tertiary flex items-center gap-1 active:scale-95 transition-transform">
+                  View Full Queue <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </div>
+            <div className="space-y-4">
+              {/* Timeline Item 1 */}
+              <div className="bg-surface-container-low hover:bg-surface-bright transition-all duration-200 p-6 rounded-xl border border-outline-variant/5 flex items-center gap-6 group cursor-pointer">
+                <div className="w-12 h-12 flex items-center justify-center bg-surface-container rounded-lg border border-outline-variant/20 group-hover:border-tertiary/30 transition-colors">
+                  <span className="material-symbols-outlined text-tertiary">mail</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] uppercase tracking-widest text-outline mb-1">Scheduled Email</p>
+                  <h4 className="font-bold text-white">Series A Fintech Lead - CTO</h4>
+                  <p className="text-sm text-on-surface-variant mt-1 italic">"Regarding the Distributed Systems opening..."</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-white">Tomorrow, 09:15</p>
+                  <p className="text-[10px] text-on-surface-variant font-label uppercase tracking-widest">In 14 hours</p>
+                </div>
+              </div>
+
+              {/* Timeline Item 2 */}
+              <div className="bg-surface-container-low hover:bg-surface-bright transition-all duration-200 p-6 rounded-xl border border-outline-variant/5 flex items-center gap-6 group cursor-pointer">
+                <div className="w-12 h-12 flex items-center justify-center bg-tertiary-container/10 rounded-lg border border-tertiary/20">
+                  <span className="material-symbols-outlined text-tertiary">forum</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-[10px] uppercase tracking-widest text-tertiary font-bold">New Response</p>
+                    <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+                  </div>
+                  <h4 className="font-bold text-white">DeepScale AI - Hiring Lead</h4>
+                  <p className="text-sm text-on-surface-variant mt-1">"Hey Marcus, love your portfolio. Let's talk Monday."</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-white">2h ago</p>
+                  <button className="mt-2 bg-white text-black px-3 py-1 rounded text-[10px] font-bold uppercase tracking-tighter hover:bg-secondary transition-colors">Reply Now</button>
+                </div>
+              </div>
+
+              {/* Timeline Item 3 */}
+              <div className="bg-surface-container-low hover:bg-surface-bright transition-all duration-200 p-6 rounded-xl border border-outline-variant/5 flex items-center gap-6 group opacity-70 cursor-pointer">
+                <div className="w-12 h-12 flex items-center justify-center bg-surface-container rounded-lg border border-outline-variant/20">
+                  <span className="material-symbols-outlined text-outline">event_note</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] uppercase tracking-widest text-outline mb-1">Deadline Reminder</p>
+                  <h4 className="font-bold text-white">HackMIT Submission Window</h4>
+                  <p className="text-sm text-on-surface-variant mt-1">Project refinement needed before 11:59 PM</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-white">Today</p>
+                  <span className="text-[10px] text-error font-bold uppercase tracking-widest">Urgent</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Probability Trend Chart */}
+            <div className="mt-12 p-8 bg-surface-container-low rounded-xl border border-outline-variant/10">
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h4 className="font-headline text-lg font-bold text-white">Skill Matching Evolution</h4>
+                  <p className="text-xs text-on-surface-variant">Improving accuracy based on feedback loops</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-tertiary"></div>
+                  <span className="text-[10px] uppercase font-label text-outline">Match Prob.</span>
+                </div>
+              </div>
+              
+              <div className="h-48 w-full flex items-end gap-4 px-2">
+                <div className="flex-1 bg-surface-container h-[40%] rounded-t relative group transition-all hover:opacity-80"><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold hidden group-hover:block text-white">55%</div></div>
+                <div className="flex-1 bg-surface-container h-[45%] rounded-t relative group transition-all hover:opacity-80"><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold hidden group-hover:block text-white">58%</div></div>
+                <div className="flex-1 bg-surface-container h-[58%] rounded-t relative group transition-all hover:opacity-80"><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold hidden group-hover:block text-white">62%</div></div>
+                <div className="flex-1 bg-tertiary/40 h-[65%] rounded-t relative group transition-all hover:opacity-80"><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold hidden group-hover:block text-white">68%</div></div>
+                <div className="flex-1 bg-tertiary/60 h-[72%] rounded-t relative group transition-all hover:opacity-80"><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold hidden group-hover:block text-white">74%</div></div>
+                <div className="flex-1 bg-tertiary h-[78%] rounded-t relative group transition-all hover:opacity-80"><div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold hidden group-hover:block text-white">78%</div></div>
+              </div>
+              <div className="flex justify-between mt-4 px-2">
+                <span className="text-[9px] uppercase font-label text-outline tracking-widest">Oct 01</span>
+                <span className="text-[9px] uppercase font-label text-outline tracking-widest">Oct 07</span>
+                <span className="text-[9px] uppercase font-label text-outline tracking-widest">Oct 14</span>
+                <span className="text-[9px] uppercase font-label text-outline tracking-widest">Today</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Opportunity Quick View (Right Column) */}
+          <div className="col-span-12 xl:col-span-4">
+            <div className="mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-tertiary text-lg">local_fire_department</span>
+              <h3 className="font-headline text-xl font-bold tracking-tight text-white">Hot Opportunities</h3>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Opp Card 1 */}
+              <div className="bg-surface-container p-5 rounded-xl border border-outline-variant/10 hover:border-tertiary/20 transition-all duration-300">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="bg-tertiary/10 text-tertiary text-[10px] font-bold px-2 py-1 rounded-sm uppercase tracking-widest">94% Match</div>
+                  <span className="material-symbols-outlined text-outline text-sm cursor-pointer hover:text-white transition-colors">bookmark</span>
+                </div>
+                <h5 className="font-bold text-white text-lg">NextGen AI Hackathon</h5>
+                <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">Premium 48-hour event focused on LLM optimization and RAG architectures. VC judging panel.</p>
+                <div className="mt-6 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] text-outline uppercase tracking-widest">Registration Ends</p>
+                    <p className="text-xs font-bold text-white">Oct 24, 2023</p>
+                  </div>
+                  <button className="bg-white hover:bg-secondary text-black w-10 h-10 flex items-center justify-center rounded-lg transition-colors active:scale-95">
+                    <span className="material-symbols-outlined text-xl">calendar_add_on</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Opp Card 2 */}
+              <div className="bg-surface-container p-5 rounded-xl border border-outline-variant/10 hover:border-tertiary/20 transition-all duration-300">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="bg-tertiary/10 text-tertiary text-[10px] font-bold px-2 py-1 rounded-sm uppercase tracking-widest">88% Match</div>
+                  <span className="material-symbols-outlined text-outline text-sm cursor-pointer hover:text-white transition-colors">bookmark</span>
+                </div>
+                <h5 className="font-bold text-white text-lg">Scale AI | Engineering Drive</h5>
+                <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">Priority hiring event for Senior Frontend & AI/ML integration roles in San Francisco.</p>
+                <div className="mt-6 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] text-outline uppercase tracking-widest">Interview Slots</p>
+                    <p className="text-xs font-bold text-white">Available Now</p>
+                  </div>
+                  <button className="bg-white hover:bg-secondary text-black w-10 h-10 flex items-center justify-center rounded-lg transition-colors active:scale-95">
+                    <span className="material-symbols-outlined text-xl">calendar_add_on</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Opp Card 3 */}
+              <div className="bg-surface-container p-5 rounded-xl border border-outline-variant/10 hover:border-tertiary/20 transition-all duration-300">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="bg-tertiary/10 text-tertiary text-[10px] font-bold px-2 py-1 rounded-sm uppercase tracking-widest">82% Match</div>
+                  <span className="material-symbols-outlined text-outline text-sm cursor-pointer hover:text-white transition-colors">bookmark</span>
+                </div>
+                <h5 className="font-bold text-white text-lg">ETH Global Istanbul</h5>
+                <p className="text-xs text-on-surface-variant mt-1 line-clamp-2">World-class blockchain developer gathering. Multiple tracks for AI/ZK implementations.</p>
+                <div className="mt-6 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] text-outline uppercase tracking-widest">Travel Grants</p>
+                    <p className="text-xs font-bold text-white">Closes in 2 days</p>
+                  </div>
+                  <button className="bg-white hover:bg-secondary text-black w-10 h-10 flex items-center justify-center rounded-lg transition-colors active:scale-95">
+                    <span className="material-symbols-outlined text-xl">calendar_add_on</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Mini Stats Footer */}
+              <div className="mt-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/10">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] text-outline uppercase tracking-widest">New Found Today</p>
+                    <p className="text-3xl font-headline font-black text-white">12</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-outline uppercase tracking-widest">Queue Status</p>
+                    <p className="text-xs font-bold text-tertiary">98% Analyzed</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+      
+      {/* Home FAB context action */}
+      <button className="fixed bottom-8 right-8 w-14 h-14 bg-tertiary rounded-xl shadow-[0_16px_48px_rgba(0,0,0,0.3)] flex items-center justify-center text-on-tertiary-container hover:scale-95 transition-transform z-50 focus:outline-none">
+        <span className="material-symbols-outlined font-bold text-3xl">add</span>
+      </button>
     </div>
   );
 }

@@ -1,8 +1,8 @@
+from fastapi import APIRouter, HTTPException, Query
 from app.models.outreach import PipelineRequest, PipelineResult
 from app.services.outreach_pipeline import run_pipeline
 from app.services.database import list_outreach, get_outreach, update_outreach
 from typing import List
-from fastapi import Query
 
 router = APIRouter(prefix="/outreach", tags=["outreach"])
 

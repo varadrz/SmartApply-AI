@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = 'http://127.0.0.1:8001';
 
 export const useOutreachStore = create((set, get) => ({
   companies: [],
@@ -21,8 +21,17 @@ export const useOutreachStore = create((set, get) => ({
   analyzeCompany: async (url, usePlaywright = false) => {
     set({ loading: true, error: null });
     try {
-      // Assuming profile is stored in settings or hardcoded for now
-      const profile = "I am a full-stack developer with expertise in React, Next.js, and FastAPI.";
+      // Correcting profile structure to match app/models/outreach.py UserProfile
+      const profile = {
+        name: "User",
+        role: "Full Stack Developer",
+        skills: ["React", "Next.js", "FastAPI", "Python", "Tailwind CSS"],
+        projects: [
+          { name: "Outreach Suite", description: "AI-powered outreach automation", tech_stack: ["FastAPI", "React"] }
+        ],
+        experience_years: 5,
+        extra_context: "I prefer a professional yet friendly tone in emails."
+      };
       
       const response = await axios.post(`${API_BASE}/outreach/run`, {
         company_url: url,
@@ -37,7 +46,9 @@ export const useOutreachStore = create((set, get) => ({
       }));
       return newCompany;
     } catch (err) {
-      const msg = err.response?.data?.detail || err.message;
+      const msg = err.response?.data?.detail 
+        ? (typeof err.response.data.detail === 'string' ? err.response.data.detail : JSON.stringify(err.response.data.detail))
+        : err.message;
       set({ error: msg, loading: false });
       throw new Error(msg);
     }
