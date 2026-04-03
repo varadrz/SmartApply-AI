@@ -1,120 +1,98 @@
-import aiosqlite
-import json
-import hashlib
-from datetime import datetime
+import time
+import logging
+from functools import wraps
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.exc import SQLAlchemyError, OperationalError, IntegrityError, TimeoutError
 from app.core.config import get_settings
-from app.models.outreach import PipelineResult
-from app.models.tracker import Opportunity, Status
+from app.models.base import Base
 
 settings = get_settings()
-DB_URL = settings.database_url.replace("sqlite+aiosqlite:///", "")
 
-async def init_db():
-    """Create all tables on startup."""
-    async with aiosqlite.connect(DB_URL) as db:
-        # 1. Outreach Tables
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS outreach (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                company_url TEXT NOT NULL,
-                company_name TEXT,
-                match_score INTEGER,
-                selection_probability TEXT,
-                email_subject TEXT,
-                email_body  TEXT,
-                status      TEXT DEFAULT 'draft',
-                full_result TEXT,
-                created_at  TEXT
-            )
-        """)
-        
-        # 2. Opportunities Tables
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS opportunities (
-                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
-                fingerprint         TEXT UNIQUE,
-                title               TEXT,
-                source              TEXT,
-                url                 TEXT,
-                type                TEXT,
-                company             TEXT,
-                deadline            TEXT,
-                days_until_deadline INTEGER,
-                priority_score      INTEGER,
-                priority            TEXT,
-                skill_match_score   INTEGER,
-                selection_value     TEXT,
-                hiring_potential    INTEGER,
-                status              TEXT DEFAULT 'new',
-                calendar_event_id   TEXT,
-                full_json           TEXT,
-                first_seen          TEXT
-            )
-        """)
-        await db.execute(
-            "CREATE INDEX IF NOT EXISTS idx_priority ON opportunities(priority_score DESC)"
-        )
-        await db.execute(
-            "CREATE INDEX IF NOT EXISTS idx_deadline ON opportunities(deadline)"
-        )
-        await db.commit()
-    print(f"Database initialized at {DB_URL}")
+DATABASE_URL = settings.database_url
 
-def make_fingerprint(title: str, source: str, url: str) -> str:
-    raw = f"{title.lower().strip()}|{source}|{url}"
-    return hashlib.sha256(raw.encode()).hexdigest()[:16]
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
-# --- Outreach Persistence ---
-async def save_outreach(result: PipelineResult) -> int:
-    async with aiosqlite.connect(DB_URL) as db:
-        cursor = await db.execute(
-            """INSERT INTO outreach (company_url, company_name, match_score, selection_probability, email_subject, email_body, status, full_result, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (result.company_url, result.company_intel.company_name, result.match.match_score, result.match.selection_probability, result.email.subject, result.email.body, result.status, result.model_dump_json(), result.created_at.isoformat())
-        )
-        await db.commit()
-        return cursor.lastrowid
+# --- 1. Engine Configuration (Strict Connection Limits & Pre-ping) ---
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=5,             # keep pool size small initially
+    max_overflow=10,         # app limit: never exceed db max connections (100)
+    pool_timeout=30,         # wait 30s before throwing connection timeout
+    pool_recycle=1800,       # avoids long-idle connection drops (recycle every 30m)
+    pool_pre_ping=True,      # prevents stale connections
+    echo=False               # echo should be false in production
+)
 
-async def list_outreach(limit: int = 50) -> list[dict]:
-    async with aiosqlite.connect(DB_URL) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT * FROM outreach ORDER BY created_at DESC LIMIT ?", (limit,)) as cursor:
-            rows = await cursor.fetchall()
-            return [dict(row) for row in rows]
+# --- 2. Session Management (Scoped Session Per Request) ---
+SessionLocal = sessionmaker(
+    bind=engine,
+    autocommit=False,       # disable autocommit
+    autoflush=False         # disable autoflush
+)
 
-async def get_outreach(id: int) -> dict:
-    async with aiosqlite.connect(DB_URL) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT * FROM outreach WHERE id = ?", (id,)) as cursor:
-            row = await cursor.fetchone()
-            return dict(row) if row else None
+def init_db():
+    """Init alembic/tables (fallback wrapper, though Alembic will dominate migrations)"""
+    logger.info("db_connection_open: Creating all tables")
+    Base.metadata.create_all(bind=engine)
 
-async def update_outreach(id: int, updates: dict) -> bool:
-    if not updates:
-        return False
-    async with aiosqlite.connect(DB_URL) as db:
-        set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
-        values = list(updates.values()) + [id]
-        await db.execute(f"UPDATE outreach SET {set_clause} WHERE id = ?", values)
-        await db.commit()
-        return True
+# --- 3. Dependency Injection Pipeline ---
+def get_db():
+    """FastAPI Dependency: Scoped session per request with commit/rollback logic"""
+    db = SessionLocal()
+    try:
+        yield db
+        db.commit()          # on_success -> commit
+    except Exception as e:
+        logger.error(f"query_failure: Rolled back transaction due to error: {e}")
+        db.rollback()        # on_failure -> rollback
+        raise
+    finally:
+        db.close()           # on_request_end -> close
 
-# --- Tracker Persistence ---
-async def upsert_opportunity(opp: Opportunity) -> tuple[Opportunity, bool]:
-    async with aiosqlite.connect(DB_URL) as db:
-        db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT id, status, calendar_event_id FROM opportunities WHERE fingerprint = ?", (opp.fingerprint,)) as cursor:
-            existing = await cursor.fetchone()
-        
-        if existing:
-            opp.id = existing["id"]
-            opp.status = Status(existing["status"])
-            opp.calendar_event_id = existing["calendar_event_id"]
-            return opp, False
-
-        cursor = await db.execute(
-            """INSERT INTO opportunities (fingerprint, title, source, url, type, company, deadline, days_until_deadline, priority_score, priority, skill_match_score, selection_value, hiring_potential, status, full_json, first_seen) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            (opp.fingerprint, opp.title, opp.source, opp.url, opp.type.value, opp.company, opp.deadline.isoformat() if opp.deadline else None, opp.days_until_deadline, opp.priority_score, opp.priority.value, opp.skill_match_score, opp.selection_value, int(opp.hiring_potential), opp.status.value, opp.model_dump_json(), opp.first_seen.isoformat())
-        )
-        await db.commit()
-        opp.id = cursor.lastrowid
-        return opp, True
+# --- 4. Retry Logic & Error Handling Decorator ---
+def retry_on_db_fail(max_retries=3, initial_delay_seconds=1):
+    """
+    Decorator for retry logic tailored to temporary_network_failures, deadlocks, 
+    and db_connection_errors. Implements exponential backoff strategy.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            retries = 0
+            delay = initial_delay_seconds
+            while retries < max_retries:
+                try:
+                    start_time = time.time()
+                    result = func(*args, **kwargs)
+                    execution_time_ms = (time.time() - start_time) * 1000
+                    
+                    if execution_time_ms > 500:
+                        logger.warning(f"log_slow_queries: {func.__name__} took {execution_time_ms:.2f}ms")
+                    
+                    return result
+                    
+                except OperationalError as e:  # Connection errors, deadlocks
+                    logger.warning(f"retry_attempt: OperationalError in {func.__name__}. Retrying in {delay}s...")
+                    retries += 1
+                    if retries >= max_retries:
+                        logger.error(f"log_and_fail: Final failure in {func.__name__} after {max_retries} retries.")
+                        raise
+                    time.sleep(delay)
+                    delay *= 2 # exponential backoff
+                    
+                except TimeoutError as e:
+                    logger.warning(f"retry_or_fail: TimeoutError in {func.__name__}")
+                    raise e
+                    
+                except IntegrityError as e:
+                    logger.error(f"return_validation_error: Integrity Error in {func.__name__} -> {e}")
+                    raise ValueError(f"Database integrity violation: {str(e.orig)}")
+                    
+                except SQLAlchemyError as e: # unknown_error
+                    logger.error(f"log_and_fail: Unknown SQLAlchemy Error in {func.__name__}: {e}")
+                    raise
+                    
+        return wrapper
+    return decorator
