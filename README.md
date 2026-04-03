@@ -1,57 +1,68 @@
-# Opportunity Intelligence & Outreach Suite
+# Obsidian AI Platform (SmartApply-AI)
 
-A unified, professional FastAPI application that combines automated opportunity tracking with AI-powered cold outreach.
+A unified, professional FastAPI + Next.js application that combines automated opportunity tracking, deep company intel analysis, and comprehensive AI-powered career pipeline management.
 
-## Features
+## Overview
+Obsidian AI tracks and manages your complete technical hiring pipeline in one place, using large language models to provide unfair advantages in outreach, resume tailoring, and interview preparation.
 
-### 1. Opportunity Intelligence (Tracker)
-- **Multi-source Scanning**: Automatically tracks hackathons, internships, competitions, and startup roles from Devfolio, Unstop, MLH, and YC.
-- **Smart Scoring**: Ranks opportunities based on skill match, brand value, and deadline urgency.
-- **Google Calendar Sync**: Automatically adds high-priority deadlines to your calendar.
-- **Weekly Timeline**: Visualizes upcoming milestones.
+### Core Modules
 
-### 2. Cold Outreach System
-- **Company Scraping**: Deep-scrapes company websites and career pages.
-- **AI Matching**: Matches your profile and projects against the company's tech stack and hiring signals.
-- **Personalized Generation**: Uses LLMs (via Ollama) to draft genuine, non-generic outreach emails.
+1. **Outreach & Target Intelligence**
+   - Deep-scrapes company websites and career pages.
+   - Matches your project profile against company tech stacks and hiring signals.
+   - Uses local LLMs (via Ollama) to draft authentic, non-generic outreach emails.
 
-### 3. Unified Dashboard (Next.js)
-- **Action-Oriented UI**: Minimal, high-performance control panel.
-- **Dark/Light Mode**: Seamlessly switch themes for a premium experience.
-- **Live Editing**: Refine and send emails directly from the dashboard.
+2. **Pipeline Command Center**
+   - **Interviews Kanban**: Easily track your progression across screenings, technicals, and onsites.
+   - **Live Calendar**: An integrated timeline syncing deep-work prep blocks and scheduled calls.
+
+3. **Asset Vault**
+   - **Portfolio Showcase**: Manages case studies and extracts insights directly from your GitHub repositories.
+   - **Resume Optimizer**: Compares your baseline CV against Target JD URLs, providing live AI suggestions for high-impact edits.
+
+4. **Market Intelligence**
+   - Tracks macro trends in hiring liquidities (Enterprise vs Startups), tech stack velocity (e.g. rising demand in Rust or Golang), and compensation bands.
+
+## Tech Stack
+- **Frontend**: Next.js 15 (App Router), React, Tailwind CSS v4, Zustand.
+- **Backend**: FastAPI, Pydantic, Python 3.10+.
+- **Database**: SQLite (Migrating to robust PostgreSQL via SQLAlchemy).
+- **AI Core**: Local Ollama execution for 100% privacy and local processing.
+- **Scraping**: Playwright, BeautifulSoup4.
 
 ## Quick Start
-
 ### 1. Installation
 ```bash
+# Backend Dependencies
 pip install -r requirements.txt
 playwright install chromium
+
+# Frontend Dependencies
+cd frontend
+npm install
 ```
 
 ### 2. Configuration
-Copy `.env.example` to `.env` and fill in your profile, Ollama settings, and Google API credentials.
+Copy `.env.example` to `.env` and fill in your profile paths, LLM configuration, and Database URIs.
 
-### 3. Run the App
-**Backend:**
+### 3. Run the Platform
+**Running the Python Backend:**
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
 ```
+*API Documentation available at: [http://localhost:8001/docs](http://localhost:8001/docs)*
 
-**Frontend:**
+**Running the Next.js Frontend:**
 ```bash
 cd frontend
-npm install
 npm run dev
 ```
-API Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
-Frontend URL: [http://localhost:3000](http://localhost:3000)
+*Dashboard available at: [http://localhost:3000](http://localhost:3000)*
 
 ## Project Structure
-- `app/`: FastAPI backend (routers, services, models).
-- `frontend/`: Next.js 15 (App Router) dashboard with Tailwind CSS.
-- `archive/`: Legacy Vite dashboard versions.
-- `requirements.txt`: Python backend dependencies.
-- `.gitignore`: Security-first exclusion rules.
+- `app/`: Production FastAPI backend (`/api/routers`, `/services`, `/models`).
+- `frontend/`: Premium dark-mode Obsidian Next.js Dashboard.
+- `requirements.txt`: Python package registry.
 
 ## License
 MIT
