@@ -34,7 +34,7 @@ def _find_careers_url(base_url: str, soup: BeautifulSoup) -> str | None:
     for hint in CAREERS_HINTS:
         candidate = root + hint
         try:
-            r = requests.head(candidate, headers=HEADERS, timeout=5, allow_redirects=True)
+            r = requests.head(candidate, headers=HEADERS, timeout=5, allow_redirects=True, verify=False)
             if r.status_code < 400:
                 return candidate
         except Exception:
@@ -42,7 +42,7 @@ def _find_careers_url(base_url: str, soup: BeautifulSoup) -> str | None:
     return None
 
 def scrape_with_requests(url: str) -> ScrapedCompany:
-    resp = requests.get(url, headers=HEADERS, timeout=15)
+    resp = requests.get(url, headers=HEADERS, timeout=15, verify=False)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
     title = soup.title.string.strip() if soup.title else ""
@@ -50,7 +50,7 @@ def scrape_with_requests(url: str) -> ScrapedCompany:
     full_text = _extract_text(soup)
     if careers_url and careers_url != url:
         try:
-            cr = requests.get(careers_url, headers=HEADERS, timeout=15)
+            cr = requests.get(careers_url, headers=HEADERS, timeout=15, verify=False)
             cr.raise_for_status()
             careers_soup = BeautifulSoup(cr.text, "html.parser")
             full_text += "\n\n--- CAREERS PAGE ---\n\n" + _extract_text(careers_soup)

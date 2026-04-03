@@ -7,6 +7,7 @@ class OutreachModel(Base):
     __tablename__ = "outreach"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id"), default="default_user_001", index=True)
     company_url = Column(String, nullable=False)
     company_name = Column(String)
     match_score = Column(Integer)

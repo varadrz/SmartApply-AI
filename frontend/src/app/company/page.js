@@ -1,52 +1,48 @@
 "use client";
 import React, { useState } from 'react';
+import { useEmailStore } from '@/store/useEmailStore';
 import { useOutreachStore } from '@/store/useOutreachStore';
 
 export default function CompanyAnalysis() {
   const [urlInput, setUrlInput] = useState('');
-  const [activeAnalysis, setActiveAnalysis] = useState(null);
   
   const { analyzeCompany, loading, error, companies } = useOutreachStore();
+  const { emailBody, emailStatus, generateEmail, updateEmailBody, sendEmail } = useEmailStore();
 
   const handleAnalyze = async () => {
     if (!urlInput) return;
     try {
-      const result = await analyzeCompany(urlInput);
-      setActiveAnalysis(result);
+      await analyzeCompany(urlInput);
       setUrlInput('');
     } catch (e) {
       console.error(e);
     }
   };
 
-  const dataToDisplay = activeAnalysis || (companies.length > 0 ? companies[0] : null);
+  const handleGenerate = async () => {
+    if (!dataToDisplay?.id) return;
+    await generateEmail(dataToDisplay.id);
+  };
 
-  const matchScore = dataToDisplay?.match?.match_score || 85;
+  const handleSend = async () => {
+    if (!dataToDisplay?.id) return;
+    const success = await sendEmail(dataToDisplay.id);
+    if (success) {
+      alert("Email sent successfully!");
+    }
+  };
+
+  const dataToDisplay = companies.length > 0 ? companies[0] : null;
+
+  const matchScore = dataToDisplay?.match_score || 0;
   const matchLabel = matchScore > 80 ? "Optimal Match" : matchScore > 50 ? "Average Match" : "Low Match";
-  const selectionProb = dataToDisplay?.match?.selection_probability || "65%";
+  const selectionProb = dataToDisplay?.selection_probability || "0%";
   
-  const techStack = dataToDisplay?.company_intel?.tech_stack?.length > 0 
-    ? dataToDisplay.company_intel.tech_stack 
-    : ["React 18", "Golang", "Kubernetes", "PostgreSQL", "gRPC", "Kafka"];
+  const techStack = dataToDisplay?.full_result?.tech_stack || [];
     
-  const hiringSignals = dataToDisplay?.company_intel?.hiring_signals?.length > 0
-    ? dataToDisplay.company_intel.hiring_signals
-    : ["Series B Expansion: Growing engineering team by 40% QoQ.", 
-       "Recent Tech Migration: Moving legacy PHP to Go microservices.", 
-       "Talent Shortage: Position open for >45 days. High leverage."];
+  const hiringSignals = dataToDisplay?.full_result?.hiring_signals || [];
        
-  const emailContent = dataToDisplay?.email?.body || `Subject: Solving the Go Microservices scaling at Obsidian Forge
-
-Hi Marcus,
-
-I noticed Obsidian Forge is currently migrating its legacy core to a Go-based architecture. Having recently led the migration of a high-throughput payment gateway from Monolith to K8s-orchestrated Go services at Helios, I understand the challenges around gRPC latency and state management you're likely facing.
-
-My skill set aligns 85% with your recent Senior Backend listing, particularly your focus on Kafka for event-driven consistency. I've documented a few patterns I used to reduce latency by 30% in similar environments.
-
-Would you be open to a 10-minute technical sync next Tuesday?
-
-Best,
-Alex Sterling`;
+  const emailContent = emailBody || dataToDisplay?.email_body || (emailStatus === 'generating' ? 'Generating intelligence...' : 'Click "Generate with Ollama" to draft a hyper-personalized outreach.');
 
   return (
     <div className="flex-1 overflow-y-auto no-scrollbar pt-8">
@@ -115,11 +111,13 @@ Alex Sterling`;
                 <span className="material-symbols-outlined text-sm">terminal</span> Tech Stack Detected
               </h3>
               <div className="flex flex-wrap gap-2">
-                {techStack.map((tech, i) => (
+                {techStack.length > 0 ? techStack.map((tech, i) => (
                   <span key={i} className="px-3 py-1.5 bg-surface-container rounded-md text-xs font-medium border border-outline-variant/20 text-white">
                     {tech}
                   </span>
-                ))}
+                )) : (
+                  <p className="text-xs text-outline italic">No tech stack data yet.</p>
+                )}
               </div>
             </div>
 
@@ -129,7 +127,7 @@ Alex Sterling`;
                 <span className="material-symbols-outlined text-sm">sensors</span> Intelligence Signals
               </h3>
               <ul className="space-y-4">
-                {hiringSignals.map((signal, i) => {
+                {hiringSignals.length > 0 ? hiringSignals.map((signal, i) => {
                   const parts = signal.includes(':') ? signal.split(':') : [signal, ''];
                   const title = parts[0];
                   const desc = parts.slice(1).join(':').trim();
@@ -145,7 +143,9 @@ Alex Sterling`;
                       </div>
                     </li>
                   )
-                })}
+                }) : (
+                  <p className="text-xs text-outline italic">No signals identified yet.</p>
+                )}
               </ul>
             </div>
           </div>
@@ -163,7 +163,7 @@ Alex Sterling`;
                   <button className="p-2 hover:bg-surface-container-high rounded transition-colors text-secondary hover:text-white">
                     <span className="material-symbols-outlined text-xl">edit</span>
                   </button>
-                  <button className="p-2 hover:bg-surface-container-high rounded transition-colors text-secondary hover:text-white">
+                  <button onClick={handleGenerate} className="p-2 hover:bg-surface-container-high rounded transition-colors text-secondary hover:text-white">
                     <span className="material-symbols-outlined text-xl">refresh</span>
                   </button>
                 </div>
@@ -173,17 +173,25 @@ Alex Sterling`;
                   className="w-full h-full bg-transparent border-none focus:ring-0 text-on-surface font-mono text-sm leading-relaxed resize-none" 
                   spellCheck="false"
                   value={emailContent}
-                  readOnly
+                  onChange={(e) => updateEmailBody(e.target.value)}
                 />
               </div>
               <div className="p-6 border-t border-outline-variant/10 flex justify-between items-center bg-surface-container-low rounded-b-xl">
-                <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-high hover:bg-surface-bright text-white text-sm font-bold rounded-lg transition-all active:scale-95 border border-outline-variant/20">
+                <button 
+                  onClick={handleGenerate}
+                  disabled={loading || emailStatus === 'generating' || !dataToDisplay?.id}
+                  className="flex items-center gap-2 px-4 py-2 bg-surface-container-high hover:bg-surface-bright text-white text-sm font-bold rounded-lg transition-all active:scale-95 border border-outline-variant/20 disabled:opacity-50"
+                >
                   <span className="material-symbols-outlined text-lg">auto_awesome</span>
-                  Generate with Ollama
+                  {emailStatus === 'generating' ? 'Thinking...' : 'Generate with Ollama'}
                 </button>
-                <button className="bg-tertiary-container text-on-tertiary-container px-8 py-3 font-black rounded-lg hover:opacity-90 active:scale-95 transition-all flex items-center gap-2">
+                <button 
+                  onClick={handleSend}
+                  disabled={loading || emailStatus === 'sending' || !dataToDisplay?.id || !emailContent}
+                  className="bg-tertiary-container text-on-tertiary-container px-8 py-3 font-black rounded-lg hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                >
                   <span className="material-symbols-outlined">send</span>
-                  SEND VIA SMTP
+                  {emailStatus === 'sending' ? 'Sending...' : 'SEND VIA SMTP'}
                 </button>
               </div>
             </div>

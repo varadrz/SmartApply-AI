@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
 from datetime import datetime
 from app.models.base import Base
 
@@ -6,6 +6,7 @@ class CalendarEventModel(Base):
     __tablename__ = "calendar_events"
 
     id = Column(String, primary_key=True, index=True) # ID from external source or UUID
+    user_id = Column(String, ForeignKey("users.id"), default="default_user_001", index=True)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     start_time = Column(DateTime)

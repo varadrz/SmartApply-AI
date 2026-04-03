@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, Float
+from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, Float, ForeignKey
 from datetime import datetime
 from app.models.base import Base
 
@@ -6,6 +6,7 @@ class OpportunityModel(Base):
     __tablename__ = "opportunities"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id"), default="default_user_001", index=True)
     fingerprint = Column(String, unique=True, index=True)
     title = Column(String, nullable=False)
     source = Column(String) # devfolio, unstop, etc

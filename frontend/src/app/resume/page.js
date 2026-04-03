@@ -1,25 +1,37 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
+import { useAppStore } from '@/store/useAppStore';
 
 export default function ResumeOptimizer() {
+  const [jdInput, setJdInput] = useState('https://careers.stripe.com/jobs/staff-infrastructure-engineer');
+  const { analyzeResume, resumeAnalysis, resLoading } = useAppStore();
+
+  const handleOptimize = async () => {
+    if (!jdInput) return;
+    await analyzeResume(jdInput);
+  };
+
+  const matchScore = resumeAnalysis?.match_score || 0;
+  const analysis = resumeAnalysis?.analysis || {};
+
   return (
     <div className="flex-1 flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
       
       {/* Header Panel */}
-      <div className="bg-[#131313] border-b border-outline-variant/10 px-8 py-4 flex-shrink-0 flex justify-between items-center z-10 shadow-md">
+      <div className="bg-surface-container-lowest border-b border-outline-variant/10 px-8 py-4 flex-shrink-0 flex justify-between items-center z-10 shadow-md">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-white font-headline flex items-center gap-2">
             <span className="material-symbols-outlined text-tertiary">document_scanner</span>
             Resume Optimizer
           </h1>
-          <p className="text-[10px] uppercase font-bold tracking-widest text-secondary mt-1">Live AI Tailoring against Target Job Descriptions</p>
+          <p className="text-[10px] uppercase font-bold tracking-widest text-outline mt-1">Live AI Tailoring against Target Job Descriptions</p>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-secondary hover:text-white transition-colors">
+          <button className="text-outline hover:text-white transition-colors">
             <span className="material-symbols-outlined text-lg">history</span>
           </button>
           <div className="h-6 w-px bg-outline-variant/20"></div>
-          <button className="bg-tertiary text-black px-6 py-2 text-[10px] uppercase font-black tracking-widest rounded transition-all hover:opacity-90 active:scale-95 flex items-center gap-2">
+          <button className="bg-tertiary text-on-tertiary px-6 py-2 text-[10px] uppercase font-black tracking-widest rounded transition-all hover:opacity-90 active:scale-95 flex items-center gap-2">
              <span className="material-symbols-outlined text-[14px]">download</span> Export PDF
           </button>
         </div>
@@ -36,78 +48,55 @@ export default function ResumeOptimizer() {
             <div className="absolute -right-6 -bottom-6 opacity-10">
               <span className="material-symbols-outlined text-9xl">target</span>
             </div>
-            <h3 className="text-xs uppercase font-bold tracking-widest text-white mb-4 relative z-10">Target Optimization Context</h3>
+            <h3 className="text-[10px] uppercase font-black tracking-widest text-white mb-4 relative z-10">Target Optimization Context</h3>
             <div className="flex gap-2 relative z-10">
               <input 
                 type="text" 
                 placeholder="Paste Job Description URL or Text..." 
-                className="flex-1 bg-surface-container border border-outline-variant/20 rounded px-4 py-2 text-xs text-white focus:outline-none focus:border-tertiary/50"
-                defaultValue="https://careers.stripe.com/jobs/staff-infrastructure-engineer"
+                className="flex-1 bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-xs text-white focus:outline-none focus:border-tertiary/50 transition-all placeholder:text-outline/50"
+                value={jdInput}
+                onChange={(e) => setJdInput(e.target.value)}
               />
-              <button className="bg-surface-container-high text-white px-4 py-2 rounded text-[10px] uppercase font-bold tracking-widest border border-outline-variant/20 hover:border-white transition-colors">
-                Extract Roles
+              <button 
+                onClick={handleOptimize}
+                disabled={resLoading}
+                className="bg-white text-black px-6 py-2 rounded-lg text-[10px] uppercase font-black tracking-widest border border-white hover:bg-tertiary hover:border-tertiary transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {resLoading ? <span className="animate-spin material-symbols-outlined text-sm">sync</span> : <span className="material-symbols-outlined text-sm">psychology</span>}
+                {resLoading ? 'Analyzing...' : 'Analyze'}
               </button>
             </div>
-            <div className="flex items-center gap-2 mt-4 relative z-10">
-              <span className="text-[10px] text-secondary font-bold uppercase">Optimizing for:</span>
-              <span className="bg-tertiary/10 text-tertiary border border-tertiary/20 px-2 py-0.5 rounded text-[10px] font-bold">Staff Infrastructure Engineer @ Stripe</span>
-            </div>
+            {resumeAnalysis && (
+              <div className="flex items-center gap-2 mt-4 relative z-10">
+                <span className="text-[10px] text-outline font-bold uppercase">Optimization Result:</span>
+                <span className="bg-tertiary/10 text-tertiary border border-tertiary/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tighter">Match Score: {matchScore}%</span>
+              </div>
+            )}
           </div>
 
-          {/* Base Resume Document View (Simulated Markdown/Rich text) */}
-          <div className="flex-1 overflow-y-auto no-scrollbar p-12 bg-[#1c1b1b]">
-            <div className="max-w-2xl mx-auto space-y-6">
+          {/* Base Resume Document View */}
+          <div className="flex-1 overflow-y-auto no-scrollbar p-12 bg-surface-container-lowest">
+            <div className="max-w-2xl mx-auto space-y-8">
               
-              {/* Header Box */}
-              <div className="border-l-4 border-outline-variant/30 pl-4 py-1 hover:border-tertiary transition-colors group cursor-text relative">
-                <div className="absolute -left-10 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <button className="w-6 h-6 rounded bg-surface-container flex items-center justify-center border border-outline-variant/30 text-secondary hover:text-white"><span className="material-symbols-outlined text-[14px]">edit</span></button>
-                </div>
-                <h2 className="text-3xl font-black text-white font-headline tracking-tighter">Marcus Thorne</h2>
-                <p className="text-secondary text-sm mt-1">Staff Backend / Infrastructure Engineer</p>
-                <p className="text-[11px] text-outline mt-1 font-mono">marcus@obsidian.ai | github.com/mthorne | linkedin.com/in/mthorne</p>
+              <div className="border-l-4 border-outline-variant/10 pl-6 py-2 hover:border-tertiary transition-colors group cursor-text relative">
+                <h2 className="text-4xl font-black text-white font-headline tracking-tighter">User Profile</h2>
+                <p className="text-secondary text-base mt-2 opacity-80">Syncing from primary candidate profile...</p>
+                <p className="text-[11px] text-outline mt-2 font-mono uppercase tracking-widest">Global Intelligence Layer Active</p>
               </div>
 
-              {/* Experience 1 */}
-              <div className="border-l-4 border-tertiary pl-4 py-1 group relative bg-tertiary/5 rounded-r">
-                <div className="absolute -left-10 top-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
-                   <button className="w-6 h-6 rounded bg-surface-container flex items-center justify-center border border-outline-variant/30 text-secondary hover:text-white"><span className="material-symbols-outlined text-[14px]">edit</span></button>
-                   <button className="w-6 h-6 rounded bg-surface-container flex items-center justify-center border border-outline-variant/30 text-tertiary"><span className="material-symbols-outlined text-[14px]">auto_awesome</span></button>
+              {/* Placeholder Content - In production this would be editable resume data */}
+              <div className="space-y-8 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-700">
+                <div className="border-l-4 border-outline-variant/5 pl-6 py-1">
+                  <h3 className="text-white font-bold text-xl mb-2">Core Experience</h3>
+                  <div className="h-4 w-3/4 bg-surface-container-high rounded mb-2"></div>
+                  <div className="h-4 w-full bg-surface-container-high rounded mb-2"></div>
+                  <div className="h-4 w-1/2 bg-surface-container-high rounded"></div>
                 </div>
-                
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="text-white font-bold text-lg leading-tight">Lead Software Engineer</h3>
-                    <p className="text-secondary text-sm">DeepScale Systems</p>
-                  </div>
-                  <span className="text-[10px] uppercase tracking-widest text-outline font-bold">2021 — Present</span>
+                <div className="border-l-4 border-outline-variant/5 pl-6 py-1">
+                  <h3 className="text-white font-bold text-xl mb-2">Key Projects</h3>
+                  <div className="h-4 w-full bg-surface-container-high rounded mb-2"></div>
+                  <div className="h-4 w-2/3 bg-surface-container-high rounded"></div>
                 </div>
-                
-                <ul className="list-disc pl-4 space-y-2 text-sm text-on-surface-variant leading-relaxed">
-                  <li>Architected and deployed a multi-region <span className="bg-tertiary/20 text-tertiary px-1 rounded font-mono">distributed tracing</span> pipeline handling 4M+ req/sec using Golang and Kafka.</li>
-                  <li className="text-white border-b border-dashed border-tertiary/50 pb-0.5">Reduced p99 database latency by 45% by implementing a bespoke Redis read-through caching layer and optimizing complex Postgres joins.</li>
-                  <li>Mentored a team of 6 engineers, transitioning the org from monolithic Ruby on Rails to Kubernetes-orchestrated microservices.</li>
-                </ul>
-              </div>
-
-               {/* Experience 2 */}
-              <div className="border-l-4 border-outline-variant/30 pl-4 py-1 hover:border-tertiary transition-colors group relative cursor-text">
-                <div className="absolute -left-10 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <button className="w-6 h-6 rounded bg-surface-container flex items-center justify-center border border-outline-variant/30 text-secondary hover:text-white"><span className="material-symbols-outlined text-[14px]">edit</span></button>
-                </div>
-                
-                <div className="flex justify-between items-start mb-2 mt-4">
-                  <div>
-                    <h3 className="text-white font-bold text-lg leading-tight">Senior Backend Engineer</h3>
-                    <p className="text-secondary text-sm">FinStack Analytics</p>
-                  </div>
-                  <span className="text-[10px] uppercase tracking-widest text-outline font-bold">2018 — 2021</span>
-                </div>
-                
-                <ul className="list-disc pl-4 space-y-2 text-sm text-on-surface-variant leading-relaxed opacity-70 group-hover:opacity-100 transition-opacity">
-                  <li>Built core payment routing REST APIs processing $50M+ daily volume using Python / FastAPI.</li>
-                  <li>Migrated legacy batch processes to event-driven architectures utilizing AWS SQS and Lambda.</li>
-                </ul>
               </div>
 
             </div>
@@ -115,76 +104,80 @@ export default function ResumeOptimizer() {
         </div>
 
         {/* Right Pane: AI Suggestion Engine */}
-        <div className="w-1/2 flex flex-col bg-surface-container relative">
+        <div className="w-1/2 flex flex-col bg-surface-container-low relative border-l border-outline-variant/10">
           
-          <div className="p-4 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low shrink-0 z-10">
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-tertiary" style={{fontVariationSettings: "'FILL' 1"}}>auto_awesome</span>
-              <span className="text-xs uppercase font-bold tracking-widest text-white">Live AI Suggestions</span>
+          <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container/50 shrink-0 z-10">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-tertiary/10 rounded-lg">
+                <span className="material-symbols-outlined text-tertiary" style={{fontVariationSettings: "'FILL' 1"}}>auto_awesome</span>
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-black tracking-widest text-white block">Intelligence Engine</span>
+                <span className="text-[8px] text-outline uppercase font-bold tracking-tighter">Targeted Optimization</span>
+              </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] text-outline uppercase font-bold">ATS Match Score:</span>
-              <div className="w-32 h-2 bg-surface-container-highest rounded-full overflow-hidden">
-                <div className="bg-tertiary h-full w-[78%]"></div>
+            <div className="flex items-center gap-4">
+              <span className="text-[10px] text-outline uppercase font-bold">Match Index</span>
+              <div className="w-24 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+                <div className="bg-tertiary h-full transition-all duration-1000" style={{width: `${matchScore}%`}}></div>
               </div>
-              <span className="text-xs font-black text-tertiary">78%</span>
+              <span className="text-sm font-black text-white">{matchScore}%</span>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-6">
             
-            {/* Suggestion 1: High Priority Rewrite */}
-            <div className="bg-surface-container-low rounded-xl border border-tertiary/30 p-5 shadow-[0_4px_24px_rgba(0,0,0,0.5)]">
-               <div className="flex justify-between items-start mb-3">
-                 <div className="flex items-center gap-2">
-                   <span className="bg-tertiary/20 text-tertiary text-[9px] px-2 py-0.5 uppercase font-black rounded">High Impact</span>
-                   <span className="text-xs font-bold text-white">Bullet Point Rewrite</span>
-                 </div>
-                 <span className="text-[10px] text-secondary font-medium italic">Role requirement: "Distributed Locks"</span>
-               </div>
-               
-               <p className="text-xs text-outline mb-2 line-through">Reduced p99 database latency by 45% by implementing a bespoke Redis read-through caching layer and optimizing complex Postgres joins.</p>
-               
-               <div className="bg-surface-container p-3 rounded border border-tertiary/20 mb-4 relative">
-                 <div className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-tertiary rounded-r"></div>
-                 <p className="text-sm text-white font-medium pl-2">Engineered a distributed locking mechanism over Redis to prevent cache stampedes, cutting Postgres query load by 60% and reducing p99 latency by 45%.</p>
-               </div>
+            {!resumeAnalysis && !resLoading ? (
+              <div className="h-full flex flex-col items-center justify-center text-center opacity-30 gap-4">
+                <span className="material-symbols-outlined text-6xl">model_training</span>
+                <p className="text-xs font-bold uppercase tracking-widest">Awaiting Optimization Context</p>
+              </div>
+            ) : resLoading ? (
+              <div className="h-full flex flex-col items-center justify-center text-center gap-6">
+                <div className="w-12 h-12 border-2 border-tertiary/20 border-t-tertiary rounded-full animate-spin"></div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-tertiary animate-pulse">Running Deep Analysis...</p>
+              </div>
+            ) : (
+              <>
+                <div className="bg-surface-container border border-outline-variant/10 rounded-2xl p-6 shadow-xl">
+                   <div className="flex justify-between items-start mb-6">
+                     <div className="flex items-center gap-3">
+                       <span className="bg-tertiary/10 text-tertiary text-[10px] px-3 py-1 uppercase font-black rounded-full border border-tertiary/20">Summary</span>
+                       <span className="text-sm font-bold text-white">Match Feedback</span>
+                     </div>
+                   </div>
+                   
+                   <p className="text-sm text-on-surface-variant leading-relaxed mb-6 font-medium">
+                     {analysis.summary || "No automated summary generated."}
+                   </p>
 
-               <div className="flex gap-2">
-                 <button className="flex-1 bg-white text-black py-2 rounded text-[10px] font-black uppercase tracking-widest hover:bg-tertiary hover:text-black transition-colors">Apply Change</button>
-                 <button className="px-4 py-2 bg-surface-container-highest border border-outline-variant/20 rounded text-secondary hover:text-white transition-colors"><span className="material-symbols-outlined text-[14px]">refresh</span></button>
-               </div>
-            </div>
+                   <div className="space-y-4">
+                     <h4 className="text-[10px] font-black text-outline uppercase tracking-widest">Key Missing Keywords</h4>
+                     <div className="flex flex-wrap gap-2">
+                       {(analysis.keywords || ['No gaps detected']).map(kw => (
+                         <span key={kw} className="px-3 py-1.5 bg-surface-container-high rounded-lg text-[10px] font-bold text-white border border-outline-variant/10">{kw}</span>
+                       ))}
+                     </div>
+                   </div>
+                </div>
 
-            {/* Suggestion 2: Missing Keyword */}
-            <div className="bg-surface-container-low rounded-xl border border-outline-variant/10 p-5">
-               <div className="flex justify-between items-start mb-3">
-                 <div className="flex items-center gap-2">
-                   <span className="bg-surface-container-highest text-white border border-outline-variant/20 text-[9px] px-2 py-0.5 uppercase font-black rounded">Missing Keyword</span>
-                   <span className="text-xs font-bold text-white">Idempotency</span>
-                 </div>
-               </div>
-               
-               <p className="text-xs text-secondary mb-4 leading-relaxed">The Stripe JD mentions idempotency keys 3 times. Your experience at FinStack Analytic building APIs likely involved this. Consider adding a bullet point highlighting how you handled retries or duplicate payments.</p>
-               
-               <button className="w-full border border-outline-variant/30 text-white py-2 rounded text-[10px] font-black uppercase tracking-widest hover:border-white transition-colors flex items-center justify-center gap-2">
-                 <span className="material-symbols-outlined text-xs">edit_note</span> Generate Draft Bullet
-               </button>
-            </div>
-
-            {/* Overall Feedback */}
-             <div className="bg-surface-container-low rounded-xl border border-outline-variant/10 p-5 opacity-70">
-               <div className="flex items-center gap-2 mb-3">
-                 <span className="material-symbols-outlined text-secondary text-sm">fact_check</span>
-                 <span className="text-xs font-bold text-white uppercase tracking-widest">Formatting Analysis</span>
-               </div>
-               <p className="text-xs text-secondary leading-relaxed">Your resume parses correctly through standard Workday ATS logic. Technical keywords are densely packed near the top. Keep the current structure.</p>
-            </div>
+                <div className="bg-surface-container/30 border border-outline-variant/10 rounded-2xl p-6">
+                  <h4 className="text-[10px] font-black text-outline uppercase tracking-widest mb-4">Strategic Recommendations</h4>
+                  <ul className="space-y-4">
+                    {(analysis.recommendations || []).map((rec, i) => (
+                      <li key={i} className="flex gap-4 group">
+                        <div className="w-6 h-6 rounded-lg bg-surface-container-high flex items-center justify-center text-[10px] font-black group-hover:bg-tertiary group-hover:text-black transition-colors">{i+1}</div>
+                        <p className="text-xs text-on-surface-variant font-medium leading-relaxed flex-1">{rec}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </>
+            )}
 
           </div>
         </div>
-
       </div>
     </div>
   );

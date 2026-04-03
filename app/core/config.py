@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     app_name: str = "Opportunity Intelligence & Outreach Suite"
     debug: bool = False
     
-    # Database (PostgreSQL via psycopg2)
-    database_url: str = "postgresql://user:password@localhost:5432/smartapply"
+    # Database (SQLite for local execution)
+    database_url: str = "sqlite:///data.db"
     
     # Opportunity Tracker Settings
     scan_interval_hours: int = 6

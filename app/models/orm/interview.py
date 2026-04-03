@@ -6,6 +6,7 @@ class InterviewModel(Base):
     __tablename__ = "interviews"
 
     id = Column(String, primary_key=True, index=True) # UUID
+    user_id = Column(String, ForeignKey("users.id"), default="default_user_001", index=True)
     company_name = Column(String, nullable=False)
     role_title = Column(String, nullable=False)
     target_compensation = Column(String, nullable=True)

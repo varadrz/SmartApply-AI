@@ -7,8 +7,8 @@ from app.core.config import get_settings
 router = APIRouter(prefix="/resume", tags=["Resume Optimizer"])
 settings = get_settings()
 
-@router.post("/optimize")
-async def optimize_resume(job_description: str, resume_id: str, db: Session = Depends(get_db)):
+@router.post("/analyze")
+async def optimize_resume(job_description: str, db: Session = Depends(get_db), resume_id: str = "default"):
     """
     Triggers the robust resume analysis flow:
     JD Keyword Extraction -> Match Score -> AI Suggestions

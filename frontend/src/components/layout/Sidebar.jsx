@@ -2,9 +2,29 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAppStore } from '@/store/useAppStore';
+import { toast } from 'react-hot-toast';
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { fetchOpportunities, fetchInterviews, fetchPortfolio, fetchMarketIntel, fetchAnalytics } = useAppStore();
+
+  const handleGlobalSync = async () => {
+    toast.promise(
+      Promise.all([
+        fetchOpportunities(),
+        fetchInterviews(),
+        fetchPortfolio(),
+        fetchMarketIntel(),
+        fetchAnalytics()
+      ]),
+      {
+        loading: 'Synchronizing Intelligence...',
+        success: 'Local context updated',
+        error: 'Sync failed'
+      }
+    );
+  };
 
   const linkGroups = [
     {
@@ -38,8 +58,8 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 flex flex-col h-screen py-6 bg-[#131313] text-white w-64 border-r border-[#474747]/20 z-50 overflow-y-auto no-scrollbar">
       <div className="px-6 mb-6">
-        <h1 className="text-xl font-bold tracking-tighter text-white uppercase font-headline">Obsidian Core</h1>
-        <p className="text-[10px] uppercase tracking-widest text-[#c7c6c6] mt-1 font-label">Elite Career Intel</p>
+        <h1 className="text-xl font-bold tracking-tighter text-white uppercase font-headline">SmartApply AI</h1>
+        <p className="text-[10px] uppercase tracking-widest text-tertiary mt-1 font-label italic">Next-Gen Career Intelligence</p>
       </div>
       
       <div className="flex-1 px-4 pb-8">
@@ -71,7 +91,10 @@ export default function Sidebar() {
       </div>
 
       <div className="px-6 mt-auto space-y-4 pt-4 border-t border-outline-variant/10 bg-[#131313]">
-        <button className="w-full bg-white text-on-primary py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider active:scale-95 transition-transform shadow-lg shadow-white/5 hover:shadow-white/10">
+        <button 
+          onClick={handleGlobalSync}
+          className="w-full bg-white text-on-primary py-2.5 rounded-lg font-bold text-xs uppercase tracking-wider active:scale-95 transition-transform shadow-lg shadow-white/5 hover:shadow-white/10"
+        >
           Sync Global Data
         </button>
         <div className="pt-4 border-t border-outline-variant/10 space-y-1 flex flex-col">

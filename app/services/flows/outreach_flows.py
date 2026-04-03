@@ -14,7 +14,7 @@ class OutreachFlows:
     
     @staticmethod
     @retry_on_db_fail()
-    async def company_analysis_flow(db: Session, url: str, user_profile: dict) -> OutreachModel:
+    async def company_analysis_flow(db: Session, url: str, user_profile: dict, user_id: str = "default_user_001") -> OutreachModel:
         """
         Robust Flow:
         1. Scrape Company
@@ -36,10 +36,11 @@ class OutreachFlows:
         # 4. Store
         new_analysis = OutreachModel(
             company_url=url,
-            company_name=intel.get("company_name", "Unknown"),
-            match_score=match_result.get("match_score", 0),
-            selection_probability=match_result.get("selection_probability", "Low"),
-            full_result=intel,
+            user_id=user_id,
+            company_name=intel.company_name or "Unknown",
+            match_score=match_result.match_score,
+            selection_probability=match_result.selection_probability,
+            full_result=intel.model_dump(),
             status="draft",
             created_at=datetime.utcnow()
         )
@@ -51,11 +52,11 @@ class OutreachFlows:
 
     @staticmethod
     @retry_on_db_fail()
-    async def email_generation_flow(db: Session, analysis_id: int, user_profile: dict) -> OutreachModel:
+    async def email_generation_flow(db: Session, analysis_id: int, user_profile: dict, user_id: str = "default_user_001") -> OutreachModel:
         """
         Generates personalized email using LLM for an existing analysis.
         """
-        analysis = db.query(OutreachModel).filter(OutreachModel.id == analysis_id).first()
+        analysis = db.query(OutreachModel).filter(OutreachModel.id == analysis_id, OutreachModel.user_id == user_id).first()
         if not analysis:
             raise ValueError("Analysis record not found")
         
@@ -69,12 +70,12 @@ class OutreachFlows:
 
     @staticmethod
     @retry_on_db_fail(max_retries=3)
-    def email_send_flow(db: Session, email_id: int) -> bool:
+    def email_send_flow(db: Session, email_id: int, user_id: str = "default_user_001") -> bool:
         """
         Finalizes an analysis and marks as 'sent'.
         (In a real app, this would trigger actual SMTP sending)
         """
-        analysis = db.query(OutreachModel).filter(OutreachModel.id == email_id).first()
+        analysis = db.query(OutreachModel).filter(OutreachModel.id == email_id, OutreachModel.user_id == user_id).first()
         if not analysis:
             return False
             

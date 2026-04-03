@@ -1,5 +1,6 @@
 import time
 import logging
+import hashlib
 from functools import wraps
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -10,6 +11,7 @@ from app.models.base import Base
 settings = get_settings()
 
 DATABASE_URL = settings.database_url
+DB_URL = "data.db" # Default for aiosqlite-based scanner components
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +33,49 @@ SessionLocal = sessionmaker(
     autocommit=False,       # disable autocommit
     autoflush=False         # disable autoflush
 )
+
+def make_fingerprint(title, source, url):
+    """Create a unique hash for an opportunity to prevent duplicates."""
+    data = f"{title}:{source}:{url or ''}".lower().strip()
+    return hashlib.sha256(data.encode()).hexdigest()
+
+async def upsert_opportunity(opp_data):
+    """
+    Async wrapper for upserting an opportunity record using SQLAlchemy.
+    Matches fingerprint to prevent duplicates.
+    """
+    from app.models.orm.opportunity import OpportunityModel
+    from app.core.auth import get_current_user
+    db = SessionLocal()
+    try:
+        # Extract data from Pydantic if needed
+        data = opp_data.model_dump() if hasattr(opp_data, 'model_dump') else opp_data
+        
+        # Attach hardcoded user_id
+        data['user_id'] = get_current_user()
+        
+        # Check by fingerprint (scoped to user)
+        existing = db.query(OpportunityModel).filter(
+            OpportunityModel.fingerprint == data.get('fingerprint'),
+            OpportunityModel.user_id == data['user_id']
+        ).first()
+        
+        if existing:
+            # Logic: If it exists, we just return it. Could optionally update status.
+            return existing, False
+            
+        # Create new ORM object
+        new_opp = OpportunityModel(**data)
+        db.add(new_opp)
+        db.commit()
+        db.refresh(new_opp)
+        return new_opp, True
+    except Exception as e:
+        db.rollback()
+        logger.error(f"upsert_failed: {e}")
+        raise
+    finally:
+        db.close()
 
 def init_db():
     """Init alembic/tables (fallback wrapper, though Alembic will dominate migrations)"""

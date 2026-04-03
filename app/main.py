@@ -9,14 +9,16 @@ from fastapi import Depends, HTTPException
 import time
 from app.services.scanner import run_scan
 from app.models.tracker import ScanRequest
-from app.api.routers.outreach import router as outreach_router
-from app.api.routers.tracker import router as tracker_router
-from app.api.routers.calendar import router as calendar_router
-from app.api.routers.interviews import router as interviews_router
-from app.api.routers.portfolio import router as portfolio_router
-from app.api.routers.resume import router as resume_router
-from app.api.routers.market import router as market_router
 from app.core.config import get_settings
+
+# Import ALL ORM Models here to ensure Base.metadata is fully populated for init_db()
+from app.models.orm.outreach import OutreachModel
+from app.models.orm.opportunity import OpportunityModel
+from app.models.orm.calendar import CalendarEventModel
+from app.models.orm.interview import InterviewModel
+from app.models.orm.portfolio import PortfolioItemModel
+from app.models.orm.user import UserModel
+from app.services.database import SessionLocal
 
 settings = get_settings()
 scheduler = AsyncIOScheduler()
@@ -33,6 +35,22 @@ async def _scheduled_scan():
 async def lifespan(app: FastAPI):
     # 1. Init DB (Sync via SQLAlchemy/Alembic prep)
     init_db()
+    
+    # Seed default user
+    db = SessionLocal()
+    try:
+        default_user = db.query(UserModel).filter(UserModel.id == "default_user_001").first()
+        if not default_user:
+            new_user = UserModel(
+                id="default_user_001",
+                email="you@local.dev",
+                full_name="Local Developer"
+            )
+            db.add(new_user)
+            db.commit()
+            print("[lifespan] Created default_user_001")
+    finally:
+        db.close()
 
     # 2. Setup Scheduler for Opportunity Tracker
     scheduler.add_job(
@@ -51,9 +69,9 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 app = FastAPI(
-    title=settings.app_name,
+    title="SmartApply AI",
     description="Unified suite for automated opportunity tracking and cold outreach.",
-    version="0.1.0",
+    version="1.0.0",
     lifespan=lifespan,
 )
 
@@ -72,13 +90,25 @@ app.add_middleware(
 )
 
 # Include Routers
-app.include_router(outreach_router)
-app.include_router(tracker_router)
-app.include_router(calendar_router)
-app.include_router(interviews_router)
-app.include_router(portfolio_router)
-app.include_router(resume_router)
-app.include_router(market_router)
+from app.api.routers.company import router as company_router
+from app.api.routers.opportunities import router as opportunities_router
+from app.api.routers.email import router as email_router
+from app.api.routers.analytics import router as analytics_router
+from app.api.routers.calendar import router as calendar_router
+from app.api.routers.interviews import router as interviews_router
+from app.api.routers.portfolio import router as portfolio_router
+from app.api.routers.resume import router as resume_router
+from app.api.routers.market import router as market_router
+
+app.include_router(company_router, prefix="/api/v1")
+app.include_router(opportunities_router, prefix="/api/v1")
+app.include_router(email_router, prefix="/api/v1")
+app.include_router(analytics_router, prefix="/api/v1")
+app.include_router(calendar_router, prefix="/api/v1")
+app.include_router(interviews_router, prefix="/api/v1")
+app.include_router(portfolio_router, prefix="/api/v1")
+app.include_router(resume_router, prefix="/api/v1")
+app.include_router(market_router, prefix="/api/v1")
 
 @app.get("/health/db", tags=["health"])
 def health_check_db(db: Session = Depends(get_db)):

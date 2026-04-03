@@ -1,14 +1,17 @@
 "use client";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
+import {
   LayoutDashboard, 
   Target, 
   Users, 
   Settings, 
   Moon, 
   Sun,
-  Zap
+  Zap,
+  Search,
+  Briefcase,
+  BarChart3
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
@@ -61,6 +64,24 @@ export default function Sidebar() {
           icon={Users} 
           label="LinkedIn / Referrals" 
           active={pathname === '/referrals'} 
+        />
+        <NavItem 
+          href="/company" 
+          icon={Search} 
+          label="Target Analysis" 
+          active={pathname === '/company'} 
+        />
+        <NavItem 
+          href="/interviews" 
+          icon={Briefcase} 
+          label="Interview Pipeline" 
+          active={pathname === '/interviews'} 
+        />
+        <NavItem 
+          href="/analytics" 
+          icon={BarChart3} 
+          label="Analytics" 
+          active={pathname === '/analytics'} 
         />
       </nav>
 

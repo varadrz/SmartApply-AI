@@ -6,8 +6,10 @@ import Header from '@/components/layout/Header';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' });
 
+import { Toaster } from 'react-hot-toast';
+
 export const metadata = {
-  title: 'Obsidian AI | Executive Career Intelligence',
+  title: 'SmartApply AI | Executive Career Intelligence',
   description: 'AI-powered professional networking and opportunity intelligence core.',
 };
 
@@ -18,6 +20,15 @@ export default function RootLayout({ children }) {
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
       </head>
       <body className={`${inter.variable} ${manrope.variable} font-body bg-surface text-on-surface min-h-screen antialiased selection:bg-tertiary/30 selection:text-tertiary-container`}>
+        <Toaster position="bottom-right" toastOptions={{
+          style: {
+            background: '#131313',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)',
+            fontSize: '12px',
+            fontWeight: 'bold',
+          }
+        }} />
         <div className="flex min-h-screen">
           <Sidebar />
           <main className="flex-1 ml-64 bg-surface min-h-screen relative flex flex-col">
