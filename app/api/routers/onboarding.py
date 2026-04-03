@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+import json
 from sqlalchemy.orm import Session
 from app.services.database import get_db
 from app.models.orm.user import UserModel
@@ -20,6 +21,8 @@ async def user_intake(
     short_bio: str = Form(None),
     current_year: int = Form(None),
     graduation_year: int = Form(None),
+    manual_skills: str = Form(None), # JSON string of list
+    education_history: str = Form(None), # JSON string of list
     resume: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
@@ -42,6 +45,18 @@ async def user_intake(
     user.short_bio = short_bio
     user.current_year = current_year
     user.expected_graduation_year = graduation_year
+    
+    if manual_skills:
+        try:
+            user.manual_skills = json.loads(manual_skills)
+        except:
+            user.manual_skills = [s.strip() for s in manual_skills.split(",")]
+            
+    if education_history:
+        try:
+            user.education_history = json.loads(education_history)
+        except:
+            user.education_history = []
     
     # 2. Handle Resume Upload
     if resume:
@@ -89,5 +104,7 @@ async def get_user_profile(
         "resume_path": user.resume_path,
         "current_year": user.current_year,
         "graduation_year": user.expected_graduation_year,
+        "manual_skills": user.manual_skills,
+        "education_history": user.education_history,
         "onboarding_complete": all([user.linkedin_url, user.github_url, user.expected_graduation_year])
     }

@@ -9,49 +9,64 @@ import uuid
 
 async def build_user_profile(db: Session, user_id: str):
     """
-    Phase 3: Profile Builder
+    Phase 9 Refinement: Prioritized Profile Builder
     1. Orchestrate all extractors
-    2. Merge into ONE user profile
-    3. Calculate ProfileScore
-    4. Auto-populate Portfolio & User skills
+    2. Merge into ONE user profile with Source Priority:
+       Manual Input > Resume > GitHub
+    3. Update ProfileScore & Strength
     """
     user = db.query(UserModel).filter(UserModel.id == user_id).first()
     if not user:
         return None
     
-    # 1. Orchestrate Extraction
-    resume_intel = {}
+    # --- 1. Orchestrate Extraction ---
+    manual_skills = set(user.manual_skills or [])
+    
+    resume_intel = {"skills": [], "experience": [], "projects": [], "education": []}
     if user.resume_path:
         resume_text = extract_text_from_pdf(user.resume_path)
         resume_intel = parse_resume_intel(resume_text)
         
-    github_intel = {}
+    github_intel = {"repos": [], "languages": [], "stars": 0}
     if user.github_url:
         github_intel = await extract_github_intel(user.github_url)
         
-    leetcode_intel = {}
+    leetcode_intel = {"problems_solved": 0, "topics": [], "difficulty_breakdown": {}}
     if user.leetcode_url:
         leetcode_intel = await extract_leetcode_intel(user.leetcode_url)
         
-    # 2. Merge Sources & Deduplicate
-    merged_skills = set(resume_intel.get("skills", []))
-    merged_skills.update(github_intel.get("languages", []))
+    # --- 2. Prioritized Merging (Manual > Resume > GitHub) ---
+    # Skills
+    final_skills = list(manual_skills)
+    resume_skills = [s for s in resume_intel.get("skills", []) if s not in final_skills]
+    final_skills.extend(resume_skills)
     
-    # 3. Calculate ProfileScore (Phased Placeholder)
-    # Simple logic: repo count + solved count + skills
-    repo_score = min(len(github_intel.get("repos", [])) * 5, 25)
-    leetcode_score = min(leetcode_intel.get("problems_solved", 0) / 10, 25)
-    skills_score = min(len(merged_skills) * 2, 50)
+    github_skills = [s for s in github_intel.get("languages", []) if s not in final_skills]
+    final_skills.extend(github_skills)
     
-    profile_score = repo_score + leetcode_score + skills_score
+    # Education: Manual first, then Resume
+    final_edu = user.education_history or []
+    if not final_edu and resume_intel.get("education"):
+        final_edu = resume_intel.get("education")
+
+    # --- 3. Calculation & Updates ---
+    repo_count = len(github_intel.get("repos", []))
+    leetcode_count = leetcode_intel.get("problems_solved", 0)
     
-    # 4. Update UserModel
-    user.parsed_skills = list(merged_skills)
-    # We could also update bio or other fields here
+    # Profile Strength (0-100)
+    strength = 0
+    if final_skills: strength += 30
+    if repo_count > 0: strength += 20
+    if leetcode_count > 0: strength += 20
+    if user.resume_path: strength += 20
+    if final_edu: strength += 10
     
-    # 5. Auto-populate Portfolio from GitHub Repos
+    # Update UserModel
+    user.parsed_skills = final_skills
+    user.profile_strength = strength
+    
+    # 4. Auto-populate Portfolio from GitHub (Phase 3 carryover)
     for repo in github_intel.get("repos", []):
-        # Check if already exists
         existing = db.query(PortfolioItemModel).filter(
             PortfolioItemModel.user_id == user_id,
             PortfolioItemModel.title == repo['name']
@@ -62,7 +77,7 @@ async def build_user_profile(db: Session, user_id: str):
                 id=str(uuid.uuid4()),
                 user_id=user_id,
                 title=repo['name'],
-                description=repo['description'] or "No description provided.",
+                description=repo['description'] or "Imported from GitHub.",
                 tech_stack=[repo['language']] if repo['language'] else [],
                 github_url=repo['url'],
                 is_flagship=repo['stars'] > 5
@@ -73,7 +88,7 @@ async def build_user_profile(db: Session, user_id: str):
     
     return {
         "user_id": user_id,
-        "profile_score": profile_score,
-        "skills_count": len(merged_skills),
-        "repos_added": len(github_intel.get("repos", []))
+        "profile_strength": strength,
+        "skills_count": len(final_skills),
+        "repos_added": repo_count
     }

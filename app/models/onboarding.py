@@ -10,3 +10,5 @@ class OnboardingRequest(BaseModel):
     short_bio: Optional[str] = None
     current_year: Optional[int] = None
     expected_graduation_year: Optional[int] = None
+    manual_skills: Optional[List[str]] = []
+    education_history: Optional[List[dict]] = []

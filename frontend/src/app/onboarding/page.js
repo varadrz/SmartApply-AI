@@ -26,6 +26,8 @@ export default function OnboardingPage() {
     current_year: '',
     graduation_year: '',
     short_bio: '',
+    manual_skills: '', // Comma-separated string
+    education_history: [{ degree: '', institution: '' }],
     resume: null
   });
 
@@ -41,12 +43,31 @@ export default function OnboardingPage() {
   const nextStep = () => setStep(prev => prev + 1);
   const prevStep = () => setStep(prev => prev - 1);
 
+  const handleEducationChange = (index, field, value) => {
+    const newEdu = [...formData.education_history];
+    newEdu[index][field] = value;
+    setFormData(prev => ({ ...prev, education_history: newEdu }));
+  };
+
+  const addEducation = () => {
+    setFormData(prev => ({ 
+      ...prev, 
+      education_history: [...prev.education_history, { degree: '', institution: '', year: '' }] 
+    }));
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     const data = new FormData();
     Object.keys(formData).forEach(key => {
       if (key === 'resume' && formData[key]) {
         data.append('resume', formData[key]);
+      } else if (key === 'education_history') {
+        data.append(key, JSON.stringify(formData[key]));
+      } else if (key === 'manual_skills') {
+        // Convert comma-string to JSON array for backend
+        const skillArray = formData[key].split(',').map(s => s.trim()).filter(s => s);
+        data.append(key, JSON.stringify(skillArray));
       } else {
         data.append(key, formData[key]);
       }
@@ -103,6 +124,17 @@ export default function OnboardingPage() {
                   onChange={handleInputChange}
                   className="w-full bg-surface-container border border-outline-variant/20 rounded-lg p-3 text-white focus:outline-none focus:border-tertiary/50 transition-colors"
                   placeholder="john@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-outline mb-2">Technical Skills (Comma separated)</label>
+                <input 
+                  type="text" 
+                  name="manual_skills"
+                  value={formData.manual_skills}
+                  onChange={handleInputChange}
+                  className="w-full bg-surface-container border border-outline-variant/20 rounded-lg p-3 text-white focus:outline-none focus:border-tertiary/50 transition-colors"
+                  placeholder="Python, React, AWS, FastAPI..."
                 />
               </div>
             </div>
@@ -193,6 +225,35 @@ export default function OnboardingPage() {
                   placeholder="2026"
                 />
               </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-xs font-bold uppercase tracking-wider text-outline">Detailed Education</label>
+              {formData.education_history.map((edu, idx) => (
+                <div key={idx} className="p-4 bg-surface-container rounded-xl border border-outline-variant/10 space-y-3">
+                  <input 
+                    type="text" 
+                    placeholder="Degree (e.g. B.Tech Computer Science)"
+                    value={edu.degree}
+                    onChange={(e) => handleEducationChange(idx, 'degree', e.target.value)}
+                    className="w-full bg-transparent border-b border-outline-variant/30 py-1 text-sm text-white focus:outline-none focus:border-tertiary/50"
+                  />
+                  <input 
+                    type="text" 
+                    placeholder="Institution (e.g. Stanford University)"
+                    value={edu.institution}
+                    onChange={(e) => handleEducationChange(idx, 'institution', e.target.value)}
+                    className="w-full bg-transparent border-b border-outline-variant/30 py-1 text-sm text-white focus:outline-none focus:border-tertiary/50"
+                  />
+                </div>
+              ))}
+              <button 
+                type="button"
+                onClick={addEducation}
+                className="text-[10px] uppercase tracking-widest font-bold text-tertiary hover:underline"
+              >
+                + Add Another Institution
+              </button>
             </div>
           </div>
         );

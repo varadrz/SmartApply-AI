@@ -2,13 +2,17 @@ from typing import List, Dict
 
 # Topic map to bridge common keyword variations
 TOPIC_SYNONYMS = {
-    "arrays": ["array", "list", "sequence"],
-    "dynamic programming": ["dp", "dynamic-programming", "optimization"],
-    "trees": ["tree", "binary-tree", "dfs", "bfs"],
-    "graphs": ["graph", "bfs", "dfs", "topological-sort"],
-    "strings": ["string", "text", "buffer"],
-    "sorting": ["sort", "binary-search"],
-    "linked list": ["linkedlist", "pointer"],
+    "arrays": ["array", "list", "sequence", "two-pointers", "sliding-window"],
+    "dynamic programming": ["dp", "dynamic-programming", "optimization", "memoization"],
+    "trees": ["tree", "binary-tree", "dfs", "bfs", "binary-search-tree", "trie"],
+    "graphs": ["graph", "bfs", "dfs", "topological-sort", "dijkstra", "shortest-path"],
+    "strings": ["string", "text", "buffer", "regex"],
+    "sorting": ["sort", "binary-search", "divide-and-conquer"],
+    "linked list": ["linkedlist", "pointer", "doubly-linked-list"],
+    "hashing": ["hash-table", "hashmap", "set", "map"],
+    "stacks/queues": ["stack", "queue", "monotonic-stack", "deque"],
+    "heaps": ["heap", "priority-queue"],
+    "bit manipulation": ["bit-manipulation", "bitwise"],
 }
 
 def analyze_dsa_readiness(user_topics: List[Dict], company_needs: List[str]) -> Dict:

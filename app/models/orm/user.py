@@ -17,6 +17,11 @@ class UserModel(Base):
     short_bio = Column(Text, nullable=True)
     current_year = Column(Integer, nullable=True)
     expected_graduation_year = Column(Integer, nullable=True)
-    parsed_skills = Column(JSON, nullable=True) # Derived from intelligence services
+    
+    # Intelligence Integration
+    manual_skills = Column(JSON, nullable=True) # Highest Priority Source
+    education_history = Column(JSON, nullable=True) # Manual input education
+    parsed_skills = Column(JSON, nullable=True) # Final merged list
+    profile_strength = Column(Integer, default=0)
     
     created_at = Column(DateTime, default=datetime.utcnow)
