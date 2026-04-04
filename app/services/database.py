@@ -16,22 +16,27 @@ DB_URL = "data.db" # Default for aiosqlite-based scanner components
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-# --- 1. Engine Configuration (Strict Connection Limits & Pre-ping) ---
+from sqlalchemy import event
+
+# --- 1. Engine Configuration (Optimized for SQLite Concurrency) ---
 engine = create_engine(
     DATABASE_URL,
-    pool_size=5,             # keep pool size small initially
-    max_overflow=10,         # app limit: never exceed db max connections (100)
-    pool_timeout=30,         # wait 30s before throwing connection timeout
-    pool_recycle=1800,       # avoids long-idle connection drops (recycle every 30m)
-    pool_pre_ping=True,      # prevents stale connections
-    echo=False               # echo should be false in production
+    connect_args={"check_same_thread": False, "timeout": 30}, # For multicore safety & lock waiting
 )
 
-# --- 2. Session Management (Scoped Session Per Request) ---
+# Enable WAL Mode for SQLite (Write-Ahead Logging)
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.close()
+
+# --- 2. Session Management ---
 SessionLocal = sessionmaker(
     bind=engine,
-    autocommit=False,       # disable autocommit
-    autoflush=False         # disable autoflush
+    autocommit=False,       
+    autoflush=False         
 )
 
 def make_fingerprint(title, source, url):
@@ -84,11 +89,10 @@ def init_db():
 
 # --- 3. Dependency Injection Pipeline ---
 def get_db():
-    """FastAPI Dependency: Scoped session per request with commit/rollback logic"""
+    """FastAPI Dependency: Scoped session per request."""
     db = SessionLocal()
     try:
         yield db
-        db.commit()          # on_success -> commit
     except Exception as e:
         logger.error(f"query_failure: Rolled back transaction due to error: {e}")
         db.rollback()        # on_failure -> rollback

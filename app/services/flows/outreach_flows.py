@@ -1,10 +1,8 @@
 from sqlalchemy.orm import Session
 from app.services.database import retry_on_db_fail
-from app.models.orm.outreach import OutreachModel
-from app.services.scraper import scrape
-from app.services.extractor import extract_intel
-from app.services.matcher import match
 from app.services.generator import generate_email
+from app.models.outreach import CompanyIntel, UserProfile, MatchResult
+from app.models.orm.outreach import OutreachModel
 from datetime import datetime
 import logging
 
@@ -46,7 +44,8 @@ class OutreachFlows:
         )
         
         db.add(new_analysis)
-        db.flush() # Ensure ID is populated
+        db.commit()
+        db.refresh(new_analysis)
         
         return new_analysis
 
@@ -60,11 +59,34 @@ class OutreachFlows:
         if not analysis:
             raise ValueError("Analysis record not found")
         
-        # Generate email
-        email_content = await generate_email(analysis.full_result, user_profile, {"match_score": analysis.match_score})
+        # 1. Re-instantiate Pydantic models for the generator
+        intel = CompanyIntel(**analysis.full_result)
         
-        analysis.email_subject = email_content.get("subject")
-        analysis.email_body = email_content.get("body")
+        # 2. Re-instantiate UserProfile
+        profile_obj = UserProfile(
+            name=user_profile.get("name", "John Doe"),
+            role=user_profile.get("role", "Software Engineer"),
+            skills=user_profile.get("skills", []),
+            projects=user_profile.get("projects", []),
+            experience_years=user_profile.get("experience_years", 2)
+        )
+        
+        # 3. Create a MatchResult for the logic context
+        # full_result usually contains the detailed matching info from the scanner
+        match_obj = MatchResult(
+            match_score=analysis.match_score,
+            selection_probability=analysis.selection_probability or "Good",
+            matched_skills=analysis.full_result.get("matched_skills", []),
+            matched_projects=analysis.full_result.get("matched_projects", []),
+            unmatched_requirements=analysis.full_result.get("unmatched_requirements", []),
+            reasoning=analysis.full_result.get("reasoning", "Strong overall match.")
+        )
+        
+        # Generate email
+        email_content = await generate_email(intel, profile_obj, match_obj)
+        
+        analysis.email_subject = email_content.subject
+        analysis.email_body = email_content.body
         
         return analysis
 

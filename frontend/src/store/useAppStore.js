@@ -188,7 +188,7 @@ export const useAppStore = create((set, get) => ({
   fetchUser: async () => {
     set({ userLoading: true });
     try {
-      const response = await axios.get(`${API_BASE}/user/profile`);
+      const response = await axios.get(`${API_BASE}/user/profile`, { timeout: 5000 });
       set({ user: response.data, userLoading: false });
       return response.data;
     } catch (err) {

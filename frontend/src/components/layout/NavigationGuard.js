@@ -13,20 +13,29 @@ export default function NavigationGuard({ children }) {
       const userData = await fetchUser();
       
       // If onboarding is NOT complete and we aren't already on the onboarding page, redirect
-      if (userData && !userData.onboarding_complete && pathname !== '/onboarding') {
+      if (userData && !userData.onboarding_complete && !pathname.startsWith('/onboarding')) {
         router.push('/onboarding');
       }
       
       // If onboarding IS complete and we are on the onboarding page, redirect to dashboard
-      if (userData && userData.onboarding_complete && pathname === '/onboarding') {
+      if (userData && userData.onboarding_complete && pathname.startsWith('/onboarding')) {
         router.push('/');
       }
     };
 
     checkUser();
+
+    // Safety timeout: ensure we don't boot forever
+    const timer = setTimeout(() => {
+      if (useAppStore.getState().userLoading) {
+        useAppStore.setState({ userLoading: false });
+      }
+    }, 6000);
+
+    return () => clearTimeout(timer);
   }, [fetchUser, pathname, router]);
 
-  if (userLoading && !user) {
+  if (userLoading && !user && !pathname.startsWith('/onboarding')) {
     return (
       <div className="fixed inset-0 bg-surface z-[100] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">

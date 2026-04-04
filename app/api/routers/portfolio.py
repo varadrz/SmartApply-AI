@@ -44,7 +44,8 @@ async def analyze_repo(github_url: str, db: Session = Depends(get_db)):
             created_at=datetime.utcnow()
         )
         db.add(new_project)
-        db.flush()
+        db.commit()
+        db.refresh(new_project)
         return new_project
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

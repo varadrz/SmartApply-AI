@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form, BackgroundTasks
 import json
 from sqlalchemy.orm import Session
 from app.services.database import get_db
@@ -24,7 +24,8 @@ async def user_intake(
     manual_skills: str = Form(None), # JSON string of list
     education_history: str = Form(None), # JSON string of list
     resume: UploadFile = File(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    background_tasks: BackgroundTasks = None
 ):
     """
     Phase 1: User Intake
@@ -72,10 +73,8 @@ async def user_intake(
     db.commit()
     
     # 3. Trigger Background Analysis (Phase 2-3 integration)
-    try:
-        await build_user_profile(db, user_id)
-    except Exception as e:
-        print(f"Intelligence build failed: {e}")
+    if background_tasks:
+        background_tasks.add_task(build_user_profile, user_id)
     
     return {
         "status": "success",

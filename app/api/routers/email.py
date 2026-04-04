@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app.services.database import get_db
 from app.services.flows.outreach_flows import OutreachFlows
 from app.models.orm.outreach import OutreachModel
+from app.models.orm.user import UserModel
+from app.core.auth import get_current_user
 from app.core.config import get_settings
 from typing import List
 from pydantic import BaseModel
@@ -22,11 +24,24 @@ async def generate_email(req: GenerateEmailRequest, db: Session = Depends(get_db
     Generates an AI email body for an existing analysis.
     """
     try:
-        user_profile = {
-            "name": settings.outreach_user_name,
-            "role": settings.outreach_user_role,
-            "skills": settings.outreach_user_skills
-        }
+        # Fetch prioritized user profile (Phase 9 Integration)
+        user_id = get_current_user()
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        
+        if user:
+            user_profile = {
+                "name": user.full_name or settings.outreach_user_name,
+                "role": "Software Engineering Student" if not user.short_bio else user.short_bio[:100],
+                "skills": user.parsed_skills or settings.outreach_user_skills,
+                "experience_years": 0 # Default for students, can be refined
+            }
+        else:
+            user_profile = {
+                "name": settings.outreach_user_name,
+                "role": settings.outreach_user_role,
+                "skills": settings.outreach_user_skills
+            }
+            
         return await OutreachFlows.email_generation_flow(db, req.company_id, user_profile)
     except ValueError as v:
         raise HTTPException(status_code=404, detail=str(v))
